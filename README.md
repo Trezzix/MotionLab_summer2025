@@ -4,9 +4,16 @@
 
 <img src="Figures/MainPage_v1.jpg" alt="drawing" height="350"/> 
 
+## General Information
+
 The project is done by Thomas Lønne Stiansen and Adrian Mathias Lervik Ling, based on previous works with the repository's foundation from the works done by Johannes Arnesen Eidsvik (and Oliver Solberg?)
 - https://github.com/JohannesAE/Comau_TCP_Control
 - https://github.com/JohannesAE/UIA-MotionLab-DigitalTwin?tab=readme-ov-file
+
+Public documentation of the Norwegian Motion Laboratory is found at \
+https://uia-mekatronikk.gitlab.io/motion-lab/comau.html
+
+
 
 
 ## User Guides
