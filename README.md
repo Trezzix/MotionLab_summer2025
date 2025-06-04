@@ -24,9 +24,10 @@ https://uia-mekatronikk.gitlab.io/motion-lab/comau.html
 1) Turn switch on dark grey comau cabinet $90^\circ$ CW
 2) Comau TP5 Teach Pendant: 
     1) MENU $\rightarrow$ Prog $\rightarrow$ startC5GOpen $\rightarrow$ Program $\rightarrow$ Deactivate
-    2) DRIVE (go from gray to green)
-    3) MENU $\rightarrow$ Prog $\rightarrow$ startC5GOpen $\rightarrow$ Program $\rightarrow$ Activate
+    2) DRIVE (go from gray to green) *~ if not available, turn physical key to middle "TP"*
+    3) (MENU $\rightarrow$ Prog $\rightarrow$) startC5GOpen $\rightarrow$ Program $\rightarrow$ Activate
     4) START
+3) MATLAB terminal: slrtExplorer $\rightarrow$ connect to SpeedGoat
 3) Changes to ```sg_IK.slx```? Run ```sg_IK_build.m```
 4) Run ```sg_IK_startup.m```
 5) MATLAB App: Set Stop Time = Inf

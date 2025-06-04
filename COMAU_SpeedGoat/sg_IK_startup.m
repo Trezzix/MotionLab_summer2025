@@ -1,10 +1,10 @@
 clear; close all; clc;
-%Add custom libraries
+% Add custom libraries
 addpath("mr\")
 addpath("Helper_functions\")
 
-Ts = 1e-3;   % Sample-period
-Tf = inf;     % Stop-time (for stimulation)
+Ts = 1e-3; % Sample-period
+Tf = inf;  % Stop-time (for stimulation)
 model = 'sg_IK';
 open_system(model);
 tg = slrealtime('Speedgoat');
@@ -28,5 +28,6 @@ for i = 1:numel(modelWSList)
         warning("Could not set {name}");
     end
 end
+
 %% Call app
 app = sg_IK_App_exported(tg, model, pars)

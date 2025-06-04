@@ -3,6 +3,7 @@ Ts = 1e-3;
 
 model = 'sg_IK';
 open_system(model);
+
 %% Initial values
 modelWorkspaceParameters;
 modelWS = get_param(model, 'ModelWorkspace');
@@ -12,10 +13,9 @@ for i = 1:numel(modelWSList)
     assignin(modelWS, name, pars.(name));
 end
 
-
-
 %% Save
 save_system(model);
+
 %% Build
 evalc('slbuild(model)');
 bdclose(model);
