@@ -2,6 +2,7 @@
 - Summer project with "The Norwegian Motion Laboratory" at UiA campus Grimstad
 - Control of robot arm with suspended payload which is tracked with IMU sensors and cameras
 
+<img src="motion-lab.png" alt="drawing" height="80"/> 
 <img src="Figures/MainPage_v1.jpg" alt="drawing" height="350"/> 
 
 ## General Information
