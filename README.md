@@ -93,6 +93,8 @@ All steps are for the Comau TP5 Teach Pendant
 3) Double click "Halt" application on desktop
 4) Turn physical lever on big Rexroth cabinet $90^\circ$ CCW
 
+It should not be necessary to press "reset" if the error comes up to reset to normal operation, this can just be closed out.
+
 ---
 
 ### Little Stewart E-Motion 1500 (EM1500)
@@ -114,6 +116,8 @@ All steps are for the Comau TP5 Teach Pendant
 2) HyPCoS UIclient: System Control $\rightarrow$ To Neutral $\rightarrow$ To Settled
 3) Double click "Halt" application on desktop
 4) Turn physical switch on top of small Rexroth cabinet (in the corner) $90^\circ$ CCW
+
+It should not be necessary to press "reset" if the error comes up to reset to normal operation, this can just be closed out.
 
 ---
 
