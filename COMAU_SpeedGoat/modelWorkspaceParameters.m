@@ -42,8 +42,8 @@ omega_mat = [omega1 omega2 omega3 omega4 omega5];
 v_mat = [-cross(omega1,q1) -cross(omega2,q2) -cross(omega3,q3)...
          -cross(omega4,q4) -cross(omega5,q5)];
 
-
 SList = [omega_mat; v_mat];
+% Same as [S1, S2, S3, S4, S5] - TLS
 
 %For body FK IK and jacobian
 M_B = TransInv(M);
