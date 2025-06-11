@@ -9,6 +9,7 @@ from datetime import timedelta
 
 fps = 30
 cwd = Path.cwd()
+mindevices = 2 # set if connecting to both at once is annoying
 
 def create_pipeline(cam_list):
     pipeline = dai.Pipeline()
@@ -29,6 +30,7 @@ with contextlib.ExitStack() as stack:
     device_infos = dai.Device.getAllAvailableDevices()
 
     if len(device_infos) == 0: raise RuntimeError("No devices found!")
+    if len(device_infos) < mindevices: raise RuntimeError("Did not connect to all devices")
     else: print("Found", len(device_infos), "devices")
     queues = []
 

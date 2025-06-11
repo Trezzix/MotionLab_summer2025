@@ -59,6 +59,15 @@ nn_spacial.setBoundingBoxScaleFactor(bbox_scale)
 nn_spacial.setDepthLowerThreshold(100)
 nn_spacial.setDepthUpperThreshold(5000)
 
+imu = pipeline.createIMU()
+xout_imu = pipeline.createXLinkOut()
+xout_imu.setStreamName("imu")
+imu.enableIMUSensor(depthai.IMUSensor.ACCELEROMETER_RAW, 500)
+imu.enableIMUSensor(depthai.IMUSensor.GYROSCOPE_RAW, 400)
+imu.enableIMUSensor(depthai.IMUSensor.MAGNETOMETER_RAW, 100)
+imu.setBatchReportThreshold(1)
+imu.setMaxBatchReports(10)
+
 # XLinkOut is a "way out" from the device. Any data you want to transfer to host need to be send via XLink
 xout_rgb = pipeline.createXLinkOut()
 xout_rgb.setStreamName("rgb")
@@ -66,6 +75,9 @@ xout_rgb.setStreamName("rgb")
 xout_nn = pipeline.createXLinkOut()
 xout_nn.setStreamName("nn")
 
+# debug mono
+xout_mono_r = pipeline.createXLinkOut()
+xout_mono_r.setStreamName("mono_r")
 #xout_depth = pipeline.createXLinkOut()
 #xout_depth.setStreamName("disparity")
 
@@ -78,11 +90,13 @@ cam_right.out.link(depth.right)
 #depth.disparity.link(xout_depth.input)
 depth.depth.link(nn_spacial.inputDepth)
 # link others
+cam_right.out.link(xout_mono_r.input)
 cam_rgb.preview.link(xout_rgb.input)
 cam_rgb.preview.link(detection_nn.input)
 cam_rgb.preview.link(nn_spacial.input)
 detection_nn.out.link(xout_nn.input)
 nn_spacial.out.link(xout_spatial.input)
+imu.out.link(xout_imu.input)
 
 # Pipeline is now finished, and we need to find an available device to run our pipeline
 # we are using context manager here that will dispose the device after we stop using it
@@ -90,12 +104,14 @@ with depthai.Device(pipeline) as device:
     # From this point, the Device will be in "running" mode and will start sending data via XLink
 
     # To consume the device results, we get two output queues from the device, with stream names we assigned earlier
-    device.setIrLaserDotProjectorIntensity(0.5)
+    device.setIrLaserDotProjectorIntensity(0.5) # enable IR dot projector (visible with mono camera)
     device.setIrFloodLightIntensity(0.0)
     q_rgb = device.getOutputQueue("rgb")
+    q_mono_r = device.getOutputQueue("mono_r")
     q_nn = device.getOutputQueue("nn")
     #q_depth = device.getOutputQueue("disparity", maxSize=4, blocking=False)
     q_spatial = device.getOutputQueue("spatial", maxSize=4, blocking=False)
+    q_imu = device.getOutputQueue("imu", maxSize=50, blocking=False)
 
     # Here, some of the default values are defined. Frame will be an image from "rgb" stream, detections will contain nn results
     frame = None
@@ -121,6 +137,8 @@ with depthai.Device(pipeline) as device:
         center_x = np.clip(center_x * frame.shape[0]).astype(int)
         center_y = np.clip(center_y * frame.shape[1]).astype(int)
         return center_x,center_y
+    
+    imuf = "{:.06f}"
 
 
     while True:
@@ -129,6 +147,13 @@ with depthai.Device(pipeline) as device:
         in_nn = q_nn.tryGet()
         #in_disparity = q_depth.tryGet() # blocking call
         in_spacial = q_spatial.tryGet()
+        in_mono_r = q_mono_r.tryGet()
+        in_imu = q_imu.tryGet()
+
+        if in_mono_r is not None:
+            # If the packet from RGB camera is present, we're retrieving the frame in OpenCV format using getCvFrame
+            frame_r = in_mono_r.getCvFrame()
+            cv2.imshow("Right", frame_r)
 
         if in_rgb is not None:
             # If the packet from RGB camera is present, we're retrieving the frame in OpenCV format using getCvFrame
@@ -159,6 +184,18 @@ with depthai.Device(pipeline) as device:
                 cv2.putText(frame,("confidence: " + str(detection.confidence*100) + "%"),(bbox[0],bbox[1]+60), cv2.FONT_HERSHEY_TRIPLEX,0.5,(0,255,0))
             # After all the drawing is finished, we show the frame on the screen
             cv2.imshow("preview", frame)
+
+        if in_imu is not None:
+            imuPackets = in_imu.packets
+            for imuPacket in imuPackets:
+                acceleroValues = imuPacket.acceleroMeter
+                gyroValues = imuPacket.gyroscope
+                magnetometerValues = imuPacket.magneticField
+
+                print("Accelerometer x:" + imuf.format(acceleroValues.x) + " y:" + imuf.format(acceleroValues.y) + " z:" + imuf.format(acceleroValues.z))
+                print("Gyroscope x:" + imuf.format(gyroValues.x) + " y:" + imuf.format(gyroValues.y) + " z:" + imuf.format(gyroValues.z))
+                print("Magnetometer x:" + imuf.format(magnetometerValues.x) + " y:" + imuf.format(magnetometerValues.y) + " z:" + imuf.format(magnetometerValues.z))
+                print('\033[4A') # move cursor up 3 lines (4-1 due to newline)
 
         #if frame_depth is not None:
         #    #normalize
