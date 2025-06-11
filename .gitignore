@@ -4,6 +4,12 @@
 ## We have git for backups!
 ##---------------------------------------------------
 
+# Virtual Environments
+*.venv/
+
+# Images (from cameras)
+*.png
+
 # Windows default autosave extension
 *.asv
 
