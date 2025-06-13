@@ -25,10 +25,12 @@ https://uia-mekatronikk.gitlab.io/motion-lab/comau.html
     - Inside Host PC #2, search for "Remote Connection" in start menu
     - Use default IP 192.168.90.150 (may need password "1") for remote connection
     - START $\rightarrow$ Windows Security $\rightarrow$ Shut Down tab in bottom right corner $\rightarrow$ Restart
-    - May need to restart TwinCAT in green "run mode" inside Visual Studio on Host PC #2
-
-
-## User Guides
+    - May need to restart TwinCAT in green "run mode" inside Visual Studio on Host PC #2 ("MotionLab" project)
+- **Host PC HMI:** To start this: "C:GitLab/motion-lab-controller/hmi"
+- **TwinCAT License Renewal:** May need renewal periodically
+    - Solution Explorer $\rightarrow$ MotionLab $\rightarrow$ SYSTEM $\rightarrow$ License $\rightarrow$ License Activation $\rightarrow$ 7 Days Trial License...
+- **SpeedGoat Unresponsive:** Reboot SpeedGoat from Simulink Real-Time Explorer
+    - Simulink Real-Time Explorer can be opened from the following command in the MATLAB terminal: ```slrtExplorer```
 
 ### Comau Industrial Robot
 #### Start
@@ -51,6 +53,7 @@ https://uia-mekatronikk.gitlab.io/motion-lab/comau.html
     - *Hand = Manual Mode ("Progr")*
     - *Logo $^{TP}$ = Program Mode ("Local")*
     - *Logo = ? ("Remote")*
+- *Remember to use correct IP on laptop 192.168.1.15 to communicate with SpeedGoat*
 
 #### Stop
 
@@ -77,6 +80,7 @@ All steps are for the Comau TP5 Teach Pendant
 1) Turn on computer #4
 2) Turn physical lever on big Rexroth cabinet $90^\circ$ CW
 3) KVM Switch: Go to PC #4
+    - May need to press "Acknowledge" on the error handler, as it has "FB Error Sercos hardware failure" when starting the PC before platform?
 4) HyPCoS UIclient: (opened on startup) Open generator (either from main screen or Controls $\rightarrow$ Generator) and ensure zero values in this tab
 5) HyPCoS UIclient: System Control $\rightarrow$ To Neutral $\rightarrow$ To Engaged
 6) Signal Generator: Stop All before changing values
@@ -103,6 +107,7 @@ It should not be necessary to press "reset" if the error comes up to reset to no
 1) Turn on computer #5
 2) Turn physical switch on top of small Rexroth cabinet (in the corner) $90^\circ$ CW
 3) KVM Switch: Go to PC #5
+    - May need to press "Acknowledge" on the error handler, as it has "FB Error Sercos hardware failure" when starting the PC before platform?
 4) HyPCoS UIclient: (opened on startup) Open generator (either from main screen or Controls $\rightarrow$ Generator) and ensure zero values in this tab
 5) HyPCoS UIclient: System Control $\rightarrow$ To Neutral $\rightarrow$ To Engaged
 6) Signal Generator: Stop All before changing values
