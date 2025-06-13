@@ -11,9 +11,11 @@ pipeline = depthai.Pipeline()
 
 # First, we want the Color camera as the output
 cam_rgb = pipeline.createColorCamera()
-cam_rgb.setPreviewSize(300, 300)  # 300x300 will be the preview frame size, available as 'preview' output of the node
+cam_rgb.setPreviewSize(416, 416)  # 300x300 will be the preview frame size, available as 'preview' output of the node
 cam_rgb.setInterleaved(False)
-# setup left and right cameras
+cam_rgb.setResolution(depthai.ColorCameraProperties.SensorResolution.THE_800_P)
+cam_rgb.setFps(14)
+# setup left and right mono cameras
 cam_left = pipeline.create(depthai.node.MonoCamera)
 cam_right = pipeline.create(depthai.node.MonoCamera)
 cam_left.setResolution(depthai.MonoCameraProperties.SensorResolution.THE_400_P)
@@ -22,22 +24,28 @@ cam_right.setResolution(depthai.MonoCameraProperties.SensorResolution.THE_400_P)
 cam_right.setCamera("right")
 
 # processing nodes
-detection_nn = pipeline.createMobileNetDetectionNetwork()
+#detection_nn = pipeline.createMobileNetDetectionNetwork()
 # Blob is the Neural Network file, compiled for MyriadX. It contains both the definition and weights of the model
 # We're using a blobconverter tool to retreive the MobileNetSSD blob automatically from OpenVINO Model Zoo
-detection_nn.setBlobPath(blobconverter.from_zoo(name='mobilenet-ssd', shaves=6))
+#detection_nn.setBlobPath(blobconverter.from_zoo(name='mobilenet-ssd', shaves=6))
 # Next, we filter out the detections that are below a confidence threshold. Confidence can be anywhere between <0..1>
-detection_nn.setConfidenceThreshold(0.5)
+
+#detection_nn = pipeline.createYoloDetectionNetwork()
+#detection_nn.setBlobPath(nn_path)
+#detection_nn.setConfidenceThreshold(0.8)
+#detection_nn.setNumClasses(2)
 
 # MobilenetSSD label texts
 
-labelMap = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
-            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+#labelMap = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
+#            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
+# trained yolo labels
+labelMap = ["payload", "zone"]
 # testing stereo depth
 # options:
 extended_dispariy = False # closer-in minimum depth
-subpixel = False # better longer distance res
+subpixel = True # better longer distance res
 lr_check = True # filter out occulsions
 
 depth = pipeline.createStereoDepth()
@@ -49,15 +57,23 @@ depth.setLeftRightCheck(lr_check)
 depth.setExtendedDisparity(extended_dispariy)
 depth.setSubpixel(subpixel)
 
-#spatial
+#spatial with YOLOv8
+nn_path = "./best_aug_openvino_2022.1_6shave.blob"
 bbox_scale = 0.5
-nn_spacial = pipeline.createMobileNetSpatialDetectionNetwork()
-nn_spacial.setBlobPath(blobconverter.from_zoo(name='mobilenet-ssd', shaves=6))
-nn_spacial.setConfidenceThreshold(0.5)
+nn_spacial = pipeline.createYoloSpatialDetectionNetwork()
+nn_spacial.setBlobPath(nn_path)
+nn_spacial.setConfidenceThreshold(0.8) # ignore below
+nn_spacial.setNumClasses(2)
+nn_spacial.setCoordinateSize(4) # number of outputs from the NN
+nn_spacial.setIouThreshold(0.8) # intersection over union (overlap of bounding boxes, higher = more overlapping bbox allowed)
+nn_spacial.setNumInferenceThreads(2)
+nn_spacial.setSpatialCalculationAlgorithm
+nn_spacial.setNumPoolFrames
+nn_spacial.setNumNCEPerInferenceThread
 nn_spacial.input.setBlocking(False)
 nn_spacial.setBoundingBoxScaleFactor(bbox_scale)
 nn_spacial.setDepthLowerThreshold(100)
-nn_spacial.setDepthUpperThreshold(5000)
+#nn_spacial.setDepthUpperThreshold(5000)
 
 imu = pipeline.createIMU()
 xout_imu = pipeline.createXLinkOut()
@@ -72,8 +88,8 @@ imu.setMaxBatchReports(10)
 xout_rgb = pipeline.createXLinkOut()
 xout_rgb.setStreamName("rgb")
 
-xout_nn = pipeline.createXLinkOut()
-xout_nn.setStreamName("nn")
+#xout_nn = pipeline.createXLinkOut()
+#xout_nn.setStreamName("nn")
 
 # debug mono
 xout_mono_r = pipeline.createXLinkOut()
@@ -92,15 +108,18 @@ depth.depth.link(nn_spacial.inputDepth)
 # link others
 cam_right.out.link(xout_mono_r.input)
 cam_rgb.preview.link(xout_rgb.input)
-cam_rgb.preview.link(detection_nn.input)
+#cam_rgb.preview.link(detection_nn.input)
 cam_rgb.preview.link(nn_spacial.input)
-detection_nn.out.link(xout_nn.input)
+#detection_nn.out.link(xout_nn.input)
 nn_spacial.out.link(xout_spatial.input)
 imu.out.link(xout_imu.input)
 
 # Pipeline is now finished, and we need to find an available device to run our pipeline
 # we are using context manager here that will dispose the device after we stop using it
-with depthai.Device(pipeline) as device:
+mxid = "14442C10515CF0D600" # MXID of base camera
+#mxid = "14442C101102F4D600" # MXID of top camera
+device_info = depthai.DeviceInfo(mxid)
+with depthai.Device(pipeline, devInfo=device_info) as device:
     # From this point, the Device will be in "running" mode and will start sending data via XLink
 
     # To consume the device results, we get two output queues from the device, with stream names we assigned earlier
@@ -108,9 +127,9 @@ with depthai.Device(pipeline) as device:
     device.setIrFloodLightIntensity(0.0)
     q_rgb = device.getOutputQueue("rgb")
     q_mono_r = device.getOutputQueue("mono_r")
-    q_nn = device.getOutputQueue("nn")
+    #q_nn = device.getOutputQueue("nn")
     #q_depth = device.getOutputQueue("disparity", maxSize=4, blocking=False)
-    q_spatial = device.getOutputQueue("spatial", maxSize=4, blocking=False)
+    q_spatial = device.getOutputQueue("spatial", maxSize=1, blocking=False)
     q_imu = device.getOutputQueue("imu", maxSize=50, blocking=False)
 
     # Here, some of the default values are defined. Frame will be an image from "rgb" stream, detections will contain nn results
@@ -139,12 +158,13 @@ with depthai.Device(pipeline) as device:
         return center_x,center_y
     
     imuf = "{:.06f}"
+    numf = "{:.02f}"
 
 
     while True:
         # we try to fetch the data from nn/rgb queues. tryGet will return either the data packet or None if there isn't any
         in_rgb = q_rgb.tryGet()
-        in_nn = q_nn.tryGet()
+        #in_nn = q_nn.tryGet()
         #in_disparity = q_depth.tryGet() # blocking call
         in_spacial = q_spatial.tryGet()
         in_mono_r = q_mono_r.tryGet()
@@ -162,9 +182,9 @@ with depthai.Device(pipeline) as device:
         #if in_disparity is not None:
         #    frame_depth = in_disparity.getCvFrame()
 
-        if in_nn is not None:
-            # when data from nn is received, we take the detections array that contains mobilenet-ssd results
-            detections = in_nn.detections
+        #if in_nn is not None:
+        #    # when data from nn is received, we take the detections array that contains mobilenet-ssd results
+        #    detections = in_nn.detections
 
         if in_spacial is not None:
             # If the packet from RGB camera is present, we're retrieving the frame in OpenCV format using getCvFrame
@@ -179,9 +199,13 @@ with depthai.Device(pipeline) as device:
                 cv2.putText(frame,labelMap[detection.label],(bbox[0],bbox[1]+40), cv2.FONT_HERSHEY_TRIPLEX,0.5,(255,255,255))
                 #center and get distance from map
                 c_x,c_y = detCenter(frame,detection)
-                cv2.circle(frame,(c_x,c_y),radius=1,color=(0,0,255))
-                cv2.putText(frame,("z [mm]: " + str(detection.spatialCoordinates.z)),(bbox[0],bbox[1]+20), cv2.FONT_HERSHEY_TRIPLEX,0.5,(0,255,0))
-                cv2.putText(frame,("confidence: " + str(detection.confidence*100) + "%"),(bbox[0],bbox[1]+60), cv2.FONT_HERSHEY_TRIPLEX,0.5,(0,255,0))
+                if detection.label == 0:
+                    color=(0,0,255)
+                else:
+                    color=(255,0,0)
+                cv2.circle(frame,(c_x,c_y),radius=1,color=color)
+                cv2.putText(frame,("z [mm]: " + numf.format(detection.spatialCoordinates.z)),(bbox[0],bbox[1]+20), cv2.FONT_HERSHEY_TRIPLEX,0.5,(0,255,0))
+                cv2.putText(frame,("confidence: " + numf.format(detection.confidence*100) + "%"),(bbox[0],bbox[1]+60), cv2.FONT_HERSHEY_TRIPLEX,0.5,(0,255,0))
             # After all the drawing is finished, we show the frame on the screen
             cv2.imshow("preview", frame)
 
@@ -195,7 +219,7 @@ with depthai.Device(pipeline) as device:
                 print("Accelerometer x:" + imuf.format(acceleroValues.x) + " y:" + imuf.format(acceleroValues.y) + " z:" + imuf.format(acceleroValues.z))
                 print("Gyroscope x:" + imuf.format(gyroValues.x) + " y:" + imuf.format(gyroValues.y) + " z:" + imuf.format(gyroValues.z))
                 print("Magnetometer x:" + imuf.format(magnetometerValues.x) + " y:" + imuf.format(magnetometerValues.y) + " z:" + imuf.format(magnetometerValues.z))
-                print('\033[4A') # move cursor up 3 lines (4-1 due to newline)
+                print('\033[4A') # move cursor up 3 lines (4-1 due to newline from print)
 
         #if frame_depth is not None:
         #    #normalize
